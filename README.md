@@ -5,4 +5,6 @@ group 12 Bao, Zack, Lei, Dragon
 mkdir build
 cd build
 cmake ..
-cmake --build .
+cmake --build . 
+
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
