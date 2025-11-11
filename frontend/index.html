@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Group-12 Multiplayer Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --accent: #38bdf8;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --danger: #f43f5e;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #111827, #020617 55%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      color: var(--text);
+    }
+    .app {
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      border-radius: 1.5rem;
+      max-width: 950px;
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 1.25rem;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.25);
+    }
+    @media (max-width: 880px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+    }
+    .board-wrap {
+      padding: 1.5rem;
+      border-right: 1px solid rgba(148, 163, 184, 0.08);
+    }
+    @media (max-width: 880px) {
+      .board-wrap {
+        border-right: none;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+      }
+    }
+    .title {
+      font-weight: 700;
+      font-size: 1.1rem;
+      display: flex;
+      justify-content: space-between;
+      gap: .4rem;
+      margin-bottom: 1rem;
+      align-items: center;
+    }
+    .badge {
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      color: #e0f2fe;
+      font-size: .65rem;
+      border-radius: 999px;
+      padding: .25rem .65rem;
+    }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(90px, 1fr));
+      gap: .75rem;
+      aspect-ratio: 1 / 1;
+      max-width: 420px;
+      margin-inline: auto;
+    }
+    .cell {
+      background: rgba(15, 23, 42, 0.4);
+      border: 1px solid rgba(148, 163, 184, 0.15);
+      border-radius: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(2.3rem, 6vw, 3rem);
+      font-weight: 700;
+      color: var(--text);
+      cursor: pointer;
+      transition: transform .1s ease-out, background .1s ease-out;
+      user-select: none;
+    }
+    .cell:hover {
+      background: rgba(148, 163, 184, 0.08);
+      transform: translateY(-2px);
+    }
+    .cell.disabled {
+      pointer-events: none;
+      opacity: 0.7;
+    }
+    .right-panel {
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .panel-card {
+      background: rgba(15, 23, 42, 0.25);
+      border: 1px solid rgba(148, 163, 184, 0.07);
+      border-radius: 1rem;
+      padding: 1rem 1rem .75rem;
+    }
+    .panel-title {
+      font-size: .8rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: .6rem;
+    }
+    .status {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+    .players {
+      display: flex;
+      gap: .65rem;
+      flex-wrap: wrap;
+    }
+    .player-pill {
+      background: rgba(15, 23, 42, 0.15);
+      border: 1px solid rgba(148, 163, 184, 0.12);
+      border-radius: .55rem;
+      padding: .35rem .6rem;
+      display: flex;
+      align-items: center;
+      gap: .35rem;
+      font-size: .72rem;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #22c55e;
+    }
+    .input-group {
+      display: flex;
+      gap: .5rem;
+      margin-top: .35rem;
+    }
+    input[type="text"] {
+      flex: 1;
+      background: rgba(15, 23, 42, 0.25);
+      border: 1px solid rgba(148, 163, 184, 0.08);
+      border-radius: .5rem;
+      padding: .45rem .6rem;
+      color: var(--text);
+      outline: none;
+    }
+    input[type="text"]::placeholder {
+      color: rgba(148, 163, 184, 0.5);
+    }
+    button {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.6);
+      color: #e2e8f0;
+      border-radius: .5rem;
+      padding: .4rem .75rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: .1s ease-out;
+    }
+    button:hover {
+      background: rgba(56, 189, 248, 0.25);
+    }
+    .danger {
+      background: rgba(244, 63, 94, 0.12);
+      border: 1px solid rgba(244, 63, 94, 0.6);
+    }
+    .muted-text {
+      font-size: .7rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- 左边：棋盘 -->
+    <div class="board-wrap">
+      <div class="title">
+        <div>Group 12 – Multiplayer Game</div>
+        <span class="badge">v0.1 frontend</span>
+      </div>
+      <div class="board" id="board">
+        <!-- 9 格棋盘 -->
+      </div>
+    </div>
+
+    <!-- 右边：状态 / 玩家 / 控制 -->
+    <div class="right-panel">
+      <div class="panel-card">
+        <div class="panel-title">Game status</div>
+        <div class="status" id="statusText">Current player: X</div>
+                <p class="muted-text" id="subStatus">Game in progress…</p>
+      </div>
+
+      <div class="panel-card">
+        <div class="panel-title">Players</div>
+        <div class="players" id="playerList">
+          <div class="player-pill"><span class="dot"></span> X (local)</div>
+          <div class="player-pill"><span class="dot"></span> O</div>
+        </div>
+        <div class="input-group">
+          <input id="playerName" type="text" placeholder="Add player name..." />
+          <button id="addPlayerBtn">Add</button>
+        </div>
+      </div>
+
+      <div class="panel-card">
+        <div class="panel-title">Controls</div>
+        <div class="input-group" style="margin-bottom:.4rem;">
+          <button id="resetBtn" class="danger" style="width:100%;">Reset game</button>
+        </div>
+        <p class="muted-text">
+          This frontend is just a static UI. You can later connect it to your Python/CI project.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 下面这段是JS，负责把9个格子塞进去 -->
+  <script>
+    const boardEl = document.getElementById("board");
+    const statusText = document.getElementById("statusText");
+    const subStatus = document.getElementById("subStatus");
+    const resetBtn = document.getElementById("resetBtn");
+    const addPlayerBtn = document.getElementById("addPlayerBtn");
+    const playerNameInput = document.getElementById("playerName");
+    const playerList = document.getElementById("playerList");
+
+    let currentPlayer = "X";
+    let board = Array(9).fill("");
+    let gameOver = false;
+
+    // 渲染棋盘
+    function renderBoard() {
+      boardEl.innerHTML = "";
+      board.forEach((val, idx) => {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        cell.dataset.index = idx;
+        cell.textContent = val;
+        cell.addEventListener("click", onCellClick);
+        if (gameOver) cell.classList.add("disabled");
+        boardEl.appendChild(cell);
+      });
+    }
+
+    function onCellClick(e) {
+      const index = e.target.dataset.index;
+      if (board[index] !== "" || gameOver) return;
+      board[index] = currentPlayer;
+      renderBoard();
+      checkWinOrSwitch();
+    }
+
+    function checkWinOrSwitch() {
+      const winner = getWinner(board);
+      if (winner) {
+        statusText.textContent = `Winner: ${winner}`;
+        subStatus.textContent = "Game finished.";
+        gameOver = true;
+        renderBoard();
+        return;
+      }
+      if (board.every(c => c !== "")) {
+        statusText.textContent = "Draw!";
+        subStatus.textContent = "No more moves.";
+        gameOver = true;
+        renderBoard();
+        return;
+      }
+      currentPlayer = currentPlayer === "X" ? "O" : "X";
+      statusText.textContent = `Current player: ${currentPlayer}`;
+      subStatus.textContent = "Game in progress…";
+    }
+
+    // 胜负判断
+    function getWinner(b) {
+      const lines = [
+        [0,1,2],[3,4,5],[6,7,8],
+        [0,3,6],[1,4,7],[2,5,8],
+        [0,4,8],[2,4,6],
+      ];
+      for (const [a,b1,c] of lines) {
+        if (board[a] && board[a] === board[b1] && board[a] === board[c]) {
+          return board[a];
+        }
+      }
+      return null;
+    }
+
+    // 重置按钮
+    resetBtn.addEventListener("click", () => {
+      board = Array(9).fill("");
+      currentPlayer = "X";
+      gameOver = false;
+      renderBoard();
+      statusText.textContent = "Current player: X";
+      subStatus.textContent = "Game in progress…";
+    });
+
+    // 添加玩家标签（只是展示）
+    addPlayerBtn.addEventListener("click", () => {
+      const name = playerNameInput.value.trim();
+      if (!name) return;
+      const pill = document.createElement("div");
+      pill.className = "player-pill";
+      pill.innerHTML = `<span class="dot"></span> ${name}`;
+      playerList.appendChild(pill);
+      playerNameInput.value = "";
+    });
+
+    // 页面加载时先画出来
+    renderBoard();
+  </script>
+</body>
+</html>
